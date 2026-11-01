@@ -194,6 +194,45 @@ def bm_add_cylinder_frustum(bm, center, r_bottom, r_top, height, segments=64, ro
             ft = bm.faces.new(top_verts)
             ft.material_index = mat_idx
 
+
+# =============================================================================
+# VERTICAL DATUM  (z = 0 is the concrete trucks and ground crew stand on)
+# The OLM clamps the booster skirt at pad level. Bells hang into the trench.
+# Starship sits ON the booster. A single sleeve crosses that joint.
+#
+# World degrees are atan2(y, x). 0° is +X.
+#   +X    passenger tower, jetway, cockpit, four cabin rows, cargo door
+#   ±Y    lateral stabilizer flaps (belly-flop chines). Forward flaps: no hinge cans.
+#   -X    ceramic belly. Mechazilla is also on -X, so umbilicals meet the hull
+#         at 108° — outside the tiles and clear of the +Y flap.
+# =============================================================================
+BOOSTER_BASE_Z = 3.2
+BOOSTER_HEIGHT = 118.0
+BOOSTER_TOP_Z = BOOSTER_BASE_Z + BOOSTER_HEIGHT
+SHIP_BASE_Z = BOOSTER_TOP_Z
+SHIP_CYL_H = 108.0
+SHIP_NOSE_H = 36.0
+SHIP_NOSE_Z = SHIP_BASE_Z + SHIP_CYL_H
+SHIP_TOP_Z = SHIP_NOSE_Z + SHIP_NOSE_H
+CABIN_DECK_Z = (
+    SHIP_BASE_Z + 56.0,
+    SHIP_BASE_Z + 66.0,
+    SHIP_BASE_Z + 76.0,
+    SHIP_BASE_Z + 86.0,
+)
+CARGO_Z_BOT = CABIN_DECK_Z[0] - 7.0
+CARGO_Z_TOP = CABIN_DECK_Z[0] - 2.0
+# Between cabin rows 2 and 3 so the jetway does not cover a window band.
+JETWAY_Z = 0.5 * (CABIN_DECK_Z[1] + CABIN_DECK_Z[2])
+CARGO_DECK_Z = 0.5 * (CARGO_Z_BOT + CARGO_Z_TOP)
+WINDWARD_CENTER = math.pi
+BELLY_HALF_RAD = math.radians(62.0)
+LEEWARD_HALF_RAD = math.radians(42.0)
+FLAP_HINGE_DEGS = (90.0, -90.0)
+UMBILICAL_DEG = 100.0
+# Old cluster: bell lip ~25.7, powerhead top ~30.2. Park the lip below the pad.
+RAPTOR_Z_SHIFT = -1.2 - 25.7
+
 bm_pad = bmesh.new()
 bm_add_box(bm_pad, (-126.0, 0.0, -12.5), (220.0, 560.0, 25.0), mat_idx=0)
 bm_add_box(bm_pad, (126.0, 0.0, -12.5), (220.0, 560.0, 25.0), mat_idx=0)
@@ -238,11 +277,11 @@ for ny in range(-120, 125, 10):
 finalize_mesh_object("Steel_Flame_Deflector", bm_defl, mat=mat_tower_steel, smooth=False)
 
 bm_olm = bmesh.new()
-olm_z_bot = 2.0
-olm_z_top = 10.0
-olm_r_in = 8.4
-olm_r_mid = 11.2
-olm_r_out = 13.8
+olm_z_bot = 0.40
+olm_z_top = 4.20
+olm_r_in = 9.20
+olm_r_mid = 11.8
+olm_r_out = 14.4
 olm_segs = 64
 
 ring_verts = []
@@ -265,33 +304,33 @@ for i in range(6):
     ang = (i * math.pi / 3.0) + (math.pi / 6.0)
     lx = math.cos(ang) * 11.8
     ly = math.sin(ang) * 11.8
-    bm_add_cylinder_frustum(bm_olm, (lx, ly, -1.5), 2.1, 1.85, 47.0, segments=28)
-    bm_add_cylinder_frustum(bm_olm, (lx * 0.84, ly * 0.84, -1.5), 0.65, 0.65, 47.0, segments=16)
-    bm_add_cylinder_frustum(bm_olm, (lx * 1.12, ly * 1.12, -1.5), 0.45, 0.45, 47.0, segments=14)
-    bm_add_cylinder_frustum(bm_olm, (lx * 0.96, ly * 0.96, 8.0), 0.32, 0.32, 28.0, segments=12)
+    bm_add_cylinder_frustum(bm_olm, (lx, ly, -1.4), 1.55, 1.35, 11.2, segments=24)
+    bm_add_cylinder_frustum(bm_olm, (lx * 0.86, ly * 0.86, -1.4), 0.55, 0.55, 11.2, segments=14)
+    bm_add_cylinder_frustum(bm_olm, (lx * 1.10, ly * 1.10, -1.4), 0.38, 0.38, 11.2, segments=12)
+    bm_add_cylinder_frustum(bm_olm, (lx * 0.96, ly * 0.96, 1.6), 0.28, 0.28, 5.2, segments=12)
     wall_x = -16.0 if lx < 0 else 16.0
-    bm_add_strut(bm_olm, (lx, ly, 12.0), (wall_x, ly, -1.5), 1.4)
-    bm_add_strut(bm_olm, (lx, ly, 2.0), (wall_x, ly, -12.0), 1.4)
+    bm_add_strut(bm_olm, (lx, ly, 3.4), (wall_x, ly, -1.0), 1.15)
+    bm_add_strut(bm_olm, (lx, ly, 1.2), (wall_x, ly, -6.0), 1.15)
 
 for i in range(40):
     ang = (2.0 * math.pi * i) / 40.0
     ca, sa = math.cos(ang), math.sin(ang)
-    bm_add_box(bm_olm, (ca * 9.55, sa * 9.55, 30.85), (1.15, 0.90, 2.3), rot_euler=(0.0, 0.0, ang))
-    bm_add_box(bm_olm, (ca * 9.08, sa * 9.08, 30.35), (0.65, 0.60, 1.35), rot_euler=(0.0, 0.0, ang))
-    bm_add_cylinder_frustum(bm_olm, (ca * 10.25, sa * 10.25, 30.9), 0.18, 0.18, 1.4, segments=10, rot_euler=(0.0, math.radians(65), ang))
-    bm_add_strut(bm_olm, (ca * 14.3, sa * 14.3, 23.2), (ca * 13.5, sa * 13.5, 21.8), 0.28)
-    bm_add_strut(bm_olm, (ca * 14.3, sa * 14.3, 23.2), (ca * 9.2, sa * 9.2, 20.6), 0.24)
-    bm_add_strut(bm_olm, (ca * 14.3, sa * 14.3, 28.4), (ca * 10.4, sa * 10.4, 29.8), 0.20)
-    bm_add_strut(bm_olm, (ca * 14.3, sa * 14.3, 23.2), (ca * 14.3, sa * 14.3, 28.4), 0.16)
-    bm_add_box(bm_olm, (ca * 13.9, sa * 13.9, 25.8), (0.55, 0.45, 0.85), rot_euler=(0.0, 0.0, ang))
+    bm_add_box(bm_olm, (ca * 9.45, sa * 9.45, 3.55), (1.05, 0.80, 1.5), rot_euler=(0.0, 0.0, ang))
+    bm_add_box(bm_olm, (ca * 9.15, sa * 9.15, 2.85), (0.58, 0.52, 0.9), rot_euler=(0.0, 0.0, ang))
+    bm_add_cylinder_frustum(bm_olm, (ca * 10.15, sa * 10.15, 3.3), 0.16, 0.16, 1.1, segments=10, rot_euler=(0.0, math.radians(65), ang))
+    bm_add_strut(bm_olm, (ca * 14.4, sa * 14.4, 1.6), (ca * 13.6, sa * 13.6, 0.4), 0.26)
+    bm_add_strut(bm_olm, (ca * 14.4, sa * 14.4, 1.6), (ca * 9.4, sa * 9.4, 0.5), 0.22)
+    bm_add_strut(bm_olm, (ca * 14.4, sa * 14.4, 3.5), (ca * 10.3, sa * 10.3, 4.15), 0.18)
+    bm_add_strut(bm_olm, (ca * 14.4, sa * 14.4, 1.6), (ca * 14.4, sa * 14.4, 3.5), 0.15)
+    bm_add_box(bm_olm, (ca * 13.9, sa * 13.9, 2.5), (0.50, 0.40, 0.7), rot_euler=(0.0, 0.0, ang))
 
 for i in range(48):
     ang = (2.0 * math.pi * i) / 48.0
     nx = math.cos(ang) * 8.65
     ny = math.sin(ang) * 8.65
-    bm_add_cylinder_frustum(bm_olm, (nx, ny, 21.6), 0.22, 0.11, 1.9, segments=10, rot_euler=(0.0, math.radians(-50), ang))
+    bm_add_cylinder_frustum(bm_olm, (nx, ny, 2.4), 0.20, 0.10, 1.4, segments=10, rot_euler=(0.0, math.radians(-50), ang))
 
-for z_m, r_m, rad_tube in ((23.2, 14.3, 0.72), (28.4, 14.3, 0.45), (20.8, 9.6, 0.55), (25.5, 14.1, 0.35)):
+for z_m, r_m, rad_tube in ((1.5, 14.5, 0.62), (3.4, 14.5, 0.40), (0.9, 9.7, 0.48), (2.4, 14.2, 0.32)):
     for i in range(olm_segs):
         a0 = (2.0 * math.pi * i) / olm_segs
         a1 = (2.0 * math.pi * (i + 1)) / olm_segs
@@ -302,24 +341,24 @@ for z_m, r_m, rad_tube in ((23.2, 14.3, 0.72), (28.4, 14.3, 0.45), (20.8, 9.6, 0
 for i in range(64):
     a0 = (2.0 * math.pi * i) / 64.0
     a1 = (2.0 * math.pi * (i + 1)) / 64.0
-    bm_add_strut(bm_olm, (math.cos(a0) * 14.9, math.sin(a0) * 14.9, 25.8), (math.cos(a1) * 14.9, math.sin(a1) * 14.9, 25.8), 0.9)
+    bm_add_strut(bm_olm, (math.cos(a0) * 15.0, math.sin(a0) * 15.0, 2.3), (math.cos(a1) * 15.0, math.sin(a1) * 15.0, 2.3), 0.75)
     if i % 2 == 0:
-        bm_add_strut(bm_olm, (math.cos(a0) * 15.3, math.sin(a0) * 15.3, 25.8), (math.cos(a0) * 15.3, math.sin(a0) * 15.3, 27.1), 0.12)
-    bm_add_strut(bm_olm, (math.cos(a0) * 15.3, math.sin(a0) * 15.3, 27.1), (math.cos(a1) * 15.3, math.sin(a1) * 15.3, 27.1), 0.10)
+        bm_add_strut(bm_olm, (math.cos(a0) * 15.4, math.sin(a0) * 15.4, 2.3), (math.cos(a0) * 15.4, math.sin(a0) * 15.4, 3.5), 0.11)
+    bm_add_strut(bm_olm, (math.cos(a0) * 15.4, math.sin(a0) * 15.4, 3.5), (math.cos(a1) * 15.4, math.sin(a1) * 15.4, 3.5), 0.09)
 
-bm_add_box(bm_olm, (-11.8, -3.5, 33.5), (3.5, 4.2, 7.0), rot_euler=(0.0, math.radians(10), 0.0))
+bm_add_box(bm_olm, (-12.2, -2.4, 2.6), (2.8, 3.4, 2.2), rot_euler=(0.0, math.radians(8), 0.0))
 finalize_mesh_object("Orbital_Launch_Mount", bm_olm, mat=mat_tower_steel, smooth=False)
 
 bm_booster = bmesh.new()
-sh_z_base = 10.0
-sh_height = 130.0
+sh_z_base = BOOSTER_BASE_Z
+sh_height = BOOSTER_HEIGHT
 sh_radius = 9.0
 sh_segs = 128
 sh_rings = 52
 
 b_grid = []
 for r_idx in range(sh_rings + 1):
-    z = sh_z_base + (r_idx / sh_rings) * (sh_height - 3.5)
+    z = sh_z_base + (r_idx / sh_rings) * sh_height
     ring = []
     for s_idx in range(sh_segs):
         ang = (2.0 * math.pi * s_idx) / sh_segs
@@ -332,22 +371,23 @@ for r_idx in range(sh_rings):
         f = bm_booster.faces.new((b_grid[r_idx][s_idx], b_grid[r_idx][ns], b_grid[r_idx + 1][ns], b_grid[r_idx + 1][s_idx]))
         f.material_index = 0
 
-for z_ring in range(34, 156, 4):
+for z_ring in range(int(sh_z_base) + 8, int(BOOSTER_TOP_Z) - 2, 4):
     bm_add_cylinder_frustum(bm_booster, (0.0, 0.0, float(z_ring)), 9.04, 9.04, 0.22, segments=128, cap_ends=False, mat_idx=0)
 
 for chine_ang in (math.radians(-95), math.radians(95)):
     cx = math.cos(chine_ang) * 8.95
     cy = math.sin(chine_ang) * 8.95
-    bm_add_box(bm_booster, (cx, cy, 92.0), (0.95, 1.35, 118.0), rot_euler=(0.0, 0.0, chine_ang), mat_idx=1)
+    bm_add_box(bm_booster, (cx, cy, sh_z_base + sh_height * 0.5), (0.95, 1.35, sh_height - 18.0), rot_euler=(0.0, 0.0, chine_ang), mat_idx=1)
 
-bm_add_cylinder_frustum(bm_booster, (0.0, 0.0, 158.25), 8.5, 8.5, 3.5, segments=96, cap_ends=True, mat_idx=1)
-bm_add_cylinder_frustum(bm_booster, (0.0, 0.0, 156.65), 9.06, 9.06, 0.4, segments=128, cap_ends=True, mat_idx=1)
-bm_add_cylinder_frustum(bm_booster, (0.0, 0.0, 159.85), 9.06, 9.06, 0.4, segments=128, cap_ends=True, mat_idx=1)
-for i in range(48):
-    ang = (2.0 * math.pi * i) / 48.0
-    sx = math.cos(ang) * 8.92
-    sy = math.sin(ang) * 8.92
-    bm_add_box(bm_booster, (sx, sy, 158.25), (0.35, 0.22, 3.1), rot_euler=(0.0, 0.0, ang), mat_idx=1)
+# One sleeve crosses the joint onto the ship. No floating rings, no center pole.
+joint_z = BOOSTER_TOP_Z
+bm_add_cylinder_frustum(bm_booster, (0.0, 0.0, joint_z), 9.05, 9.05, 2.2, segments=96, cap_ends=False, mat_idx=1)
+bm_add_cylinder_frustum(bm_booster, (0.0, 0.0, joint_z - 0.15), 8.55, 8.55, 1.4, segments=80, cap_ends=False, mat_idx=1)
+for i in range(36):
+    ang = (2.0 * math.pi * i) / 36.0
+    sx = math.cos(ang) * 9.12
+    sy = math.sin(ang) * 9.12
+    bm_add_box(bm_booster, (sx, sy, joint_z), (0.28, 0.18, 2.0), rot_euler=(0.0, 0.0, ang), mat_idx=1)
 
 booster_obj = finalize_mesh_object("Super_Heavy_Booster", bm_booster, mat=mat_titanium, smooth=True)
 booster_obj.data.materials.append(mat_titanium_dark)
@@ -363,35 +403,35 @@ for phase, count, ring_r in raptor_rings:
         ang = phase + (2.0 * math.pi * i) / count
         rx = math.cos(ang) * ring_r
         ry = math.sin(ang) * ring_r
-        bm_add_cylinder_frustum(bm_raptors, (rx, ry, 27.3), 1.12, 0.34, 3.2, segments=28, cap_ends=False, mat_idx=0)
-        bm_add_cylinder_frustum(bm_raptors, (rx, ry, 25.85), 1.19, 1.13, 0.45, segments=28, cap_ends=True, mat_idx=0)
-        bm_add_cylinder_frustum(bm_raptors, (rx, ry, 26.25), 0.94, 0.94, 1.1, segments=24, cap_ends=True, mat_idx=0)
+        bm_add_cylinder_frustum(bm_raptors, (rx, ry, 27.3 + RAPTOR_Z_SHIFT), 1.12, 0.34, 3.2, segments=28, cap_ends=False, mat_idx=0)
+        bm_add_cylinder_frustum(bm_raptors, (rx, ry, 25.85 + RAPTOR_Z_SHIFT), 1.19, 1.13, 0.45, segments=28, cap_ends=True, mat_idx=0)
+        bm_add_cylinder_frustum(bm_raptors, (rx, ry, 26.25 + RAPTOR_Z_SHIFT), 0.94, 0.94, 1.1, segments=24, cap_ends=True, mat_idx=0)
         for h_z, h_r in ((26.4, 1.09), (26.75, 1.02), (27.1, 0.96), (27.5, 0.88), (27.9, 0.80), (28.5, 0.62)):
-            bm_add_cylinder_frustum(bm_raptors, (rx, ry, h_z), h_r, h_r, 0.10, segments=24, cap_ends=True, mat_idx=1)
-        bm_add_cylinder_frustum(bm_raptors, (rx, ry, 29.55), 0.48, 0.56, 1.4, segments=20, cap_ends=True, mat_idx=1)
+            bm_add_cylinder_frustum(bm_raptors, (rx, ry, h_z + RAPTOR_Z_SHIFT), h_r, h_r, 0.10, segments=24, cap_ends=True, mat_idx=1)
+        bm_add_cylinder_frustum(bm_raptors, (rx, ry, 29.55 + RAPTOR_Z_SHIFT), 0.48, 0.56, 1.4, segments=20, cap_ends=True, mat_idx=1)
         for p_idx in range(4):
             p_ang = ang + p_idx * (math.pi / 2.0)
             px = rx + math.cos(p_ang) * 0.56
             py = ry + math.sin(p_ang) * 0.56
-            bm_add_cylinder_frustum(bm_raptors, (px, py, 29.4), 0.22, 0.18, 1.05, segments=12, cap_ends=True, mat_idx=1)
-            p_top = (px, py, 29.88)
-            p_mid = (rx + math.cos(p_ang) * 0.88, ry + math.sin(p_ang) * 0.88, 28.45)
-            p_lip = (rx + math.cos(p_ang) * 1.08, ry + math.sin(p_ang) * 1.08, 26.35)
+            bm_add_cylinder_frustum(bm_raptors, (px, py, 29.4 + RAPTOR_Z_SHIFT), 0.22, 0.18, 1.05, segments=12, cap_ends=True, mat_idx=1)
+            p_top = (px, py, 29.88 + RAPTOR_Z_SHIFT)
+            p_mid = (rx + math.cos(p_ang) * 0.88, ry + math.sin(p_ang) * 0.88, 28.45 + RAPTOR_Z_SHIFT)
+            p_lip = (rx + math.cos(p_ang) * 1.08, ry + math.sin(p_ang) * 1.08, 26.35 + RAPTOR_Z_SHIFT)
             bm_add_strut(bm_raptors, p_top, p_mid, 0.11, mat_idx=1)
             bm_add_strut(bm_raptors, p_mid, p_lip, 0.09, mat_idx=1)
             bm_add_box(bm_raptors, p_mid, (0.16, 0.16, 0.16), rot_euler=(0.0, 0.0, p_ang), mat_idx=0)
             next_ang = p_ang + (math.pi / 2.0)
-            p_next = (rx + math.cos(next_ang) * 0.88, ry + math.sin(next_ang) * 0.88, 28.45)
+            p_next = (rx + math.cos(next_ang) * 0.88, ry + math.sin(next_ang) * 0.88, 28.45 + RAPTOR_Z_SHIFT)
             bm_add_strut(bm_raptors, p_mid, p_next, 0.07, mat_idx=1)
         g_ang = ang + math.radians(45.0)
-        bm_add_strut(bm_raptors, (rx + math.cos(g_ang) * 0.3, ry + math.sin(g_ang) * 0.3, 30.2), (rx + math.cos(g_ang) * 0.92, ry + math.sin(g_ang) * 0.92, 27.8), 0.10, mat_idx=0)
+        bm_add_strut(bm_raptors, (rx + math.cos(g_ang) * 0.3, ry + math.sin(g_ang) * 0.3, 30.2 + RAPTOR_Z_SHIFT), (rx + math.cos(g_ang) * 0.92, ry + math.sin(g_ang) * 0.92, 27.8 + RAPTOR_Z_SHIFT), 0.10, mat_idx=0)
 
 raptors_obj = finalize_mesh_object("Super_Heavy_33_Raptors", bm_raptors, mat=mat_engine_metal, smooth=True)
 raptors_obj.data.materials.append(mat_copper_turbopump)
 
 bm_gf = bmesh.new()
 gf_angles = [math.radians(38), math.radians(142), math.radians(218), math.radians(322)]
-gf_z = 153.2
+gf_z = BOOSTER_TOP_Z - 7.0
 gf_span = 7.6
 gf_chord = 5.4
 gf_depth = 0.72
@@ -436,10 +476,10 @@ for ang in gf_angles:
 
 finalize_mesh_object("Super_Heavy_Waffle_Grid_Fins", bm_gf, mat=mat_titanium_dark, smooth=False)
 
-v5_z_base = 160.0
-v5_cyl_h = 90.0
+v5_z_base = SHIP_BASE_Z
+v5_cyl_h = SHIP_CYL_H
 v5_nose_z_base = v5_z_base + v5_cyl_h
-v5_nose_h = 32.0
+v5_nose_h = SHIP_NOSE_H
 v5_radius = 9.0
 v5_segs = 128
 v5_cyl_rings = 60
@@ -450,13 +490,13 @@ def v5_radius_at_z(z_world):
         return v5_radius
     z_local = min(v5_nose_h, max(0.0, z_world - v5_nose_z_base))
     if z_local >= v5_nose_h - 1e-5:
-        return 0.0
+        return 0.65
     cos_arg = max(-1.0, min(1.0, 1.0 - 2.0 * (v5_nose_h - z_local) / v5_nose_h))
     theta = math.acos(cos_arg)
     r_vk = (v5_radius / math.sqrt(math.pi)) * math.sqrt(max(0.0, theta - 0.5 * math.sin(2.0 * theta)))
     rho = (v5_radius**2 + v5_nose_h**2) / (2.0 * v5_radius)
     r_tan = math.sqrt(max(0.0, rho**2 - z_local**2)) + v5_radius - rho
-    return 0.55 * r_vk + 0.45 * r_tan
+    return max(0.65, 0.55 * r_vk + 0.45 * r_tan)
 
 bm_v5 = bmesh.new()
 v5_rings_verts = []
@@ -470,7 +510,7 @@ for z_val in z_samples:
     rad = v5_radius_at_z(z_val)
     ring = []
     for s_idx in range(v5_segs):
-        ang = (2.0 * math.pi * s_idx) / v5_segs + math.pi  # 180° rotation
+        ang = (2.0 * math.pi * s_idx) / v5_segs
         ring.append(bm_v5.verts.new((math.cos(ang) * rad, math.sin(ang) * rad, z_val)))
     v5_rings_verts.append(ring)
 
@@ -493,7 +533,7 @@ for z_val in z_samples:
     rad = v5_radius_at_z(z_val) + 0.025
     ring = []
     for s_idx in range(v5_segs):
-        ang = (2.0 * math.pi * s_idx) / v5_segs + math.pi  # 180° rotation
+        ang = (2.0 * math.pi * s_idx) / v5_segs
         ring.append(bm_shield.verts.new((math.cos(ang) * rad, math.sin(ang) * rad, z_val)))
     hs_rings.append(ring)
 
@@ -505,13 +545,16 @@ for r_idx in range(len(hs_rings) - 1):
         v11 = hs_rings[r_idx + 1][ns]
         v10 = hs_rings[r_idx + 1][s_idx]
         center = (v00.co + v01.co + v11.co + v10.co) * 0.25
-        is_nose_cap = center.z > 276.8
         ang = math.atan2(center.y, center.x)
-        # True belly = negative Y (around -90 deg / 270 deg), ±80 deg arc
-        is_belly = abs((ang + math.pi/2 + math.pi) % (2*math.pi) - math.pi) < math.radians(80)
-        # Exclude leeward (+Y / around +90 deg) window and cargo zones
-        is_leeward_window_or_cargo = (abs((ang - math.pi/2 + math.pi) % (2*math.pi) - math.pi) < math.radians(50) and 210.0 < center.z < 276.0)
-        if (is_nose_cap or is_belly) and not is_leeward_window_or_cargo:
+        if center.z > SHIP_TOP_Z - 6.0:
+            continue
+        if v5_radius_at_z(center.z) < 2.4:
+            continue
+        belly_delta = abs((ang - WINDWARD_CENTER + math.pi) % (2.0 * math.pi) - math.pi)
+        is_belly = belly_delta < BELLY_HALF_RAD
+        leeward_delta = abs((ang - 0.0 + math.pi) % (2.0 * math.pi) - math.pi)
+        is_leeward = leeward_delta < LEEWARD_HALF_RAD
+        if is_belly and not is_leeward:
             f = bm_shield.faces.new((v00, v01, v11, v10))
             f.material_index = 1
 
@@ -532,25 +575,27 @@ shield_obj.data.materials.append(mat_heat_grout)
 
 bm_flaps = bmesh.new()
 
-def build_vertical_flap(bm, side_sign, z_bot_root, z_top_root, z_bot_tip, z_top_tip, span_out, add_hinge=True):
+def build_vertical_flap(bm, hinge_deg, z_bot_root, z_top_root, z_bot_tip, z_top_tip, span_out, add_hinge=True):
+    hinge = math.radians(hinge_deg)
+    ox, oy = math.cos(hinge), math.sin(hinge)
+    tx, ty = -math.sin(hinge), math.cos(hinge)
     stations = 12
     prof_pts = 8
     rings = []
+    r_tip_ref = v5_radius_at_z(z_bot_root) + span_out
     for i in range(stations + 1):
         u = i / stations
         z_b = z_bot_root * (1.0 - u) + z_bot_tip * u
         z_t = z_top_root * (1.0 - u) + z_top_tip * u
-        half_thick = 0.62 * (1.0 - 0.65 * u)
+        half_thick = 0.55 * (1.0 - 0.62 * u)
         ring = []
         for k in range(prof_pts):
             t_ang = (2.0 * math.pi * k) / prof_pts
             z_curr = 0.5 * (z_b + z_t) + 0.5 * (z_t - z_b) * math.cos(t_ang)
-            y_curr = half_thick * math.sin(t_ang)
-            r_hull = v5_radius_at_z(z_curr) - 0.25
-            x_root = side_sign * r_hull
-            x_tip = side_sign * (v5_radius_at_z(z_bot_root) + span_out)
-            x_curr = x_root * (1.0 - u) + x_tip * u
-            ring.append(bm.verts.new((x_curr, y_curr, z_curr)))
+            thick = half_thick * math.sin(t_ang)
+            r_hull = max(1.2, v5_radius_at_z(z_curr) - 0.15)
+            r_curr = r_hull * (1.0 - u) + r_tip_ref * u
+            ring.append(bm.verts.new((ox * r_curr + tx * thick, oy * r_curr + ty * thick, z_curr)))
         rings.append(ring)
     for i in range(stations):
         for k in range(prof_pts):
@@ -559,13 +604,17 @@ def build_vertical_flap(bm, side_sign, z_bot_root, z_top_root, z_bot_tip, z_top_
     bm.faces.new(rings[-1])
     if add_hinge:
         z_hinge_mid = 0.5 * (z_bot_root + z_top_root)
-        r_hinge = v5_radius_at_z(z_hinge_mid) - 0.1
-        bm_add_cylinder_frustum(bm, (side_sign * r_hinge, 0.0, z_hinge_mid), 0.78, 0.65, (z_top_root - z_bot_root) * 1.04, segments=20)
+        r_hinge = max(1.2, v5_radius_at_z(z_hinge_mid) - 0.05)
+        bm_add_cylinder_frustum(
+            bm, (ox * r_hinge, oy * r_hinge, z_hinge_mid),
+            0.52, 0.46, (z_top_root - z_bot_root) * 0.90, segments=16,
+        )
 
-build_vertical_flap(bm_flaps, 1.0, 161.5, 189.5, 160.5, 174.5, 8.8)
-build_vertical_flap(bm_flaps, -1.0, 161.5, 189.5, 160.5, 174.5, 8.8)
-build_vertical_flap(bm_flaps, 1.0, 257.5, 273.5, 257.0, 265.0, 4.6, add_hinge=False)
-build_vertical_flap(bm_flaps, -1.0, 257.5, 273.5, 257.0, 265.0, 4.6, add_hinge=False)
+aft0, aft1 = SHIP_BASE_Z + 4.0, SHIP_BASE_Z + 32.0
+fwd0, fwd1 = SHIP_NOSE_Z + 2.5, SHIP_NOSE_Z + 15.0
+for hinge_deg in FLAP_HINGE_DEGS:
+    build_vertical_flap(bm_flaps, hinge_deg, aft0, aft1, aft0 - 0.8, aft0 + 13.0, 8.0, add_hinge=True)
+    build_vertical_flap(bm_flaps, hinge_deg, fwd0, fwd1, fwd0 - 0.3, fwd0 + 8.5, 4.0, add_hinge=False)
 finalize_mesh_object("Starship_V5_Aerodynamic_Stabilizers", bm_flaps, mat=mat_heat_tiles, smooth=True)
 
 bm_windows = bmesh.new()
@@ -598,36 +647,49 @@ def add_leeward_cockpit_window(bm, z_low, z_high, deg_start, deg_end, mat_glass_
                 f.material_index = m_idx
 
 def add_horizontal_oval_window(bm, center_deg, z_center, half_w_deg, half_h_z, mat_glass_idx, mat_frame_idx):
-    segs = 20
+    """Horizontal oval: a polar disk on the hull, wider than it is tall. Not a square n-gon."""
+    n_ang = 16
+    n_rad = 4
     for r_off, dw, dh, m_idx in (
-        (0.05, half_w_deg + 0.9, half_h_z + 0.14, mat_frame_idx),
-        (0.09, half_w_deg, half_h_z, mat_glass_idx),
+        (0.045, half_w_deg + 0.55, half_h_z + 0.08, mat_frame_idx),
+        (0.12, half_w_deg, half_h_z, mat_glass_idx),
     ):
-        ring_verts = []
-        for i in range(segs):
-            theta = (2.0 * math.pi * i) / segs
-            d_curr = center_deg + dw * math.cos(theta)
-            z_curr = z_center + dh * math.sin(theta)
-            rad = v5_radius_at_z(z_curr) + r_off
-            ang = math.radians(d_curr)
-            ring_verts.append(bm.verts.new((math.cos(ang) * rad, math.sin(ang) * rad, z_curr)))
-        f = bm.faces.new(ring_verts)
-        f.material_index = m_idx
+        c_ang = math.radians(center_deg)
+        c_rad = v5_radius_at_z(z_center) + r_off
+        center_v = bm.verts.new((math.cos(c_ang) * c_rad, math.sin(c_ang) * c_rad, z_center))
+        rings = []
+        for ir in range(1, n_rad + 1):
+            rf = ir / n_rad
+            ring = []
+            for ia in range(n_ang):
+                theta = (2.0 * math.pi * ia) / n_ang
+                d_curr = center_deg + dw * rf * math.cos(theta)
+                z_curr = z_center + dh * rf * math.sin(theta)
+                rad = v5_radius_at_z(z_curr) + r_off
+                ang = math.radians(d_curr)
+                ring.append(bm.verts.new((math.cos(ang) * rad, math.sin(ang) * rad, z_curr)))
+            rings.append(ring)
+        for ia in range(n_ang):
+            nia = (ia + 1) % n_ang
+            f = bm.faces.new((center_v, rings[0][ia], rings[0][nia]))
+            f.material_index = m_idx
+        for ir in range(n_rad - 1):
+            for ia in range(n_ang):
+                nia = (ia + 1) % n_ang
+                f = bm.faces.new((rings[ir][ia], rings[ir][nia], rings[ir + 1][nia], rings[ir + 1][ia]))
+                f.material_index = m_idx
 
-shuttle_panes = [
-    (226.0, 240.0, 272.0, 274.8),
-    (242.5, 256.0, 272.4, 275.2),
-    (258.5, 268.8, 272.8, 275.6),
-    (271.2, 281.5, 272.8, 275.6),
-    (284.0, 297.5, 272.4, 275.2),
-    (300.0, 314.0, 272.0, 274.8),
-]
-for d0, d1, zl, zh in shuttle_panes:
-    add_leeward_cockpit_window(bm_windows, zl, zh, d0, d1, mat_glass_idx=0, mat_frame_idx=2)
+# Cockpit: one horizontal band of six panes, high on the +X nose. Not on the belly.
+cockpit_z0 = SHIP_NOSE_Z + SHIP_NOSE_H * 0.70
+cockpit_z1 = cockpit_z0 + 2.2
+cockpit_spans = tuple((-30 + i * 10, -30 + i * 10 + 8) for i in range(6))
+for d0, d1 in cockpit_spans:
+    add_leeward_cockpit_window(bm_windows, cockpit_z0, cockpit_z1, d0, d1, mat_glass_idx=0, mat_frame_idx=2)
 
-for deck_z in (228.0, 235.0, 242.0, 249.0):
-    for p_deg in range(234, 312, 12):
-        add_horizontal_oval_window(bm_windows, float(p_deg), deck_z, half_w_deg=4.2, half_h_z=0.48, mat_glass_idx=1, mat_frame_idx=2)
+# Four cabin decks. Five wide ovals per row, all on +X, clear of the jetway height.
+for deck_z in CABIN_DECK_Z:
+    for p_deg in (-26, -13, 0, 13, 26):
+        add_horizontal_oval_window(bm_windows, float(p_deg), deck_z, half_w_deg=5.0, half_h_z=0.42, mat_glass_idx=1, mat_frame_idx=2)
 
 win_obj = finalize_mesh_object("Starship_V5_Cockpit_And_Cabin_Windows", bm_windows, mat=mat_cockpit_glass, smooth=True)
 win_obj.data.materials.append(mat_cabin_glass)
@@ -653,30 +715,27 @@ def add_curved_hull_patch(bm, z0, z1, d0, d1, r_off, steps_u, steps_v, mat_idx):
             created_faces.append(f)
     return created_faces
 
-cd_z_bot = 214.0
-cd_z_top = 219.0
-cd_deg_min = 235.0
-cd_deg_max = 305.0
+cd_z_bot = CARGO_Z_BOT
+cd_z_top = CARGO_Z_TOP
+cd_deg_min = -32.0
+cd_deg_max = 32.0
 add_curved_hull_patch(bm_cargo, cd_z_bot - 0.35, cd_z_top + 0.35, cd_deg_min - 2.2, cd_deg_max + 2.2, 0.05, 16, 8, mat_idx=1)
 door_faces = add_curved_hull_patch(bm_cargo, cd_z_bot, cd_z_top, cd_deg_min, cd_deg_max, 0.09, 14, 6, mat_idx=0)
 bmesh.ops.solidify(bm_cargo, geom=door_faces, thickness=0.14)
 
 add_curved_hull_patch(bm_cargo, cd_z_bot, cd_z_top, -0.45, 0.45, 0.17, 2, 6, mat_idx=1)
-for z_seam in (217.25, 218.50, 219.75):
+for z_seam in (cd_z_bot + 1.25, cd_z_bot + 2.50, cd_z_bot + 3.75):
     add_curved_hull_patch(bm_cargo, z_seam - 0.07, z_seam + 0.07, cd_deg_min, cd_deg_max, 0.17, 14, 1, mat_idx=1)
 
-for z_hinge in (216.6, 217.8, 219.2, 220.4):
+for z_hinge in (cd_z_bot + 0.6, cd_z_bot + 1.8, cd_z_bot + 3.2, cd_z_bot + 4.4):
     for d_hinge in (cd_deg_min - 1.2, cd_deg_max + 1.2):
         ang_h = math.radians(d_hinge)
         r_h = v5_radius_at_z(z_hinge) + 0.12
         bm_add_box(bm_cargo, (math.cos(ang_h) * r_h, math.sin(ang_h) * r_h, z_hinge), (0.28, 0.42, 0.48), rot_euler=(0.0, 0.0, ang_h), mat_idx=1)
 
-for z_latch in (216.8, 218.5, 220.2):
+for z_latch in (cd_z_bot + 0.8, cd_z_bot + 2.5, cd_z_bot + 4.2):
     r_l = v5_radius_at_z(z_latch) + 0.16
     bm_add_box(bm_cargo, (r_l, 0.0, z_latch), (0.20, 0.55, 0.28), mat_idx=1)
-
-person_door_faces = add_curved_hull_patch(bm_cargo, 226.5, 229.3, -29.0, -21.0, 0.08, 6, 4, mat_idx=1)
-bmesh.ops.solidify(bm_cargo, geom=person_door_faces, thickness=0.10)
 
 cargo_obj = finalize_mesh_object("Starship_V5_Cargo_Bay_Door", bm_cargo, mat=mat_titanium, smooth=False)
 cargo_obj.data.materials.append(mat_titanium_dark)
@@ -684,7 +743,7 @@ cargo_obj.data.materials.append(mat_titanium_dark)
 bm_tower = bmesh.new()
 tw_cx, tw_cy = -42.0, 6.0
 tw_half = 9.5
-tw_height = 312.0
+tw_height = SHIP_TOP_Z + 22.0
 tw_bays = 64
 bay_h = tw_height / tw_bays
 
@@ -764,7 +823,7 @@ for strap_x in (lad_x - 0.52, lad_x, lad_x + 0.52):
 bm_add_box(bm_tower, (tw_cx + 3.0, tw_cy, tw_height + 3.5), (26.0, 22.0, 7.0), mat_idx=0)
 bm_add_cylinder_frustum(bm_tower, (tw_cx, tw_cy, tw_height + 16.0), 0.6, 0.1, 18.0, segments=12, mat_idx=0)
 
-car_z = 146.5
+car_z = SHIP_BASE_Z + 2.2
 bm_add_box(bm_tower, (-30.5, tw_cy, car_z), (4.5, 24.0, 9.0), mat_idx=0)
 for arm_y in (-11.6, 11.6):
     x_start = -29.0
@@ -807,8 +866,11 @@ def build_umbilical_arm(bm, z_arm, y_arm, x_tower_face, x_ship_target):
     bm_add_box(bm, (x_ship_target + 0.45, y_arm, z_arm), (0.95, 2.8, 3.0), mat_idx=0)
     bm_add_strut(bm, (x_tower_face, y_arm, z_arm - 6.5), (x_tower_face + 0.55 * (x_ship_target - x_tower_face), y_arm, z_arm - h_z * 0.5), 0.45, mat_idx=0)
 
-build_umbilical_arm(bm_tower, 44.0, 2.8, -32.2, -9.55)
-build_umbilical_arm(bm_tower, 196.0, 2.8, -32.2, -9.55)
+umb_ang = math.radians(UMBILICAL_DEG)
+umb_x = math.cos(umb_ang) * 9.25
+umb_y = math.sin(umb_ang) * 9.25
+build_umbilical_arm(bm_tower, BOOSTER_BASE_Z + 42.0, umb_y, -32.2, umb_x)
+build_umbilical_arm(bm_tower, SHIP_BASE_Z + 16.0, umb_y, -32.2, umb_x)
 
 tower_obj = finalize_mesh_object("Mechazilla_312m_Launch_Tower", bm_tower, mat=mat_tower_steel, smooth=False)
 tower_obj.data.materials.append(mat_cabin_glass)
@@ -817,7 +879,7 @@ tower_obj.data.materials.append(mat_cryo_white)
 bm_crew_tower = bmesh.new()
 ct_cx, ct_cy = 44.0, 0.0
 ct_half = 7.5
-ct_height = 258.0
+ct_height = JETWAY_Z
 ct_bays = 43
 ct_bay_h = ct_height / ct_bays
 
@@ -849,77 +911,68 @@ for b_idx in range(ct_bays):
     if b_idx % 4 == 0 and b_idx > 0:
         bm_add_box(bm_crew_tower, (ct_cx, ct_cy, z1), (14.6, 14.6, 0.25), mat_idx=0)
 
-bm_add_box(bm_crew_tower, (ct_cx, ct_cy, ct_height + 2.5), (19.0, 19.0, 5.0), mat_idx=2)
+# Glass lobby is the crown. Passenger elevator is inside the tower and opens onto this floor.
+# The jetway leaves the lobby's ship-facing wall. No second crown, no external elevator.
+lobby_floor = ct_height
+lobby_h = 8.0
+lobby_z = lobby_floor + lobby_h * 0.5
+lobby_dx, lobby_dy = 28.0, 16.0
+lobby_cx = ct_cx - 6.0
+lobby_cy = 0.0
+lobby_x_ship = lobby_cx - lobby_dx * 0.5
+bm_add_box(bm_crew_tower, (lobby_cx, lobby_cy, lobby_z), (lobby_dx, lobby_dy, lobby_h), mat_idx=3)
+bm_add_box(bm_crew_tower, (lobby_cx, lobby_cy, lobby_floor + lobby_h), (lobby_dx + 1.4, lobby_dy + 1.4, 0.7), mat_idx=2)
+bm_add_box(bm_crew_tower, (lobby_cx, lobby_cy, lobby_floor), (lobby_dx + 0.6, lobby_dy + 0.6, 0.45), mat_idx=2)
 
-elev_x = ct_cx
-elev_y = ct_cy - ct_half - 2.6
-elev_h = 240.0
-for ex_off in (-1.8, 1.8):
-    for ey_off in (-1.6, 1.6):
-        bm_add_strut(bm_crew_tower, (elev_x + ex_off, elev_y + ey_off, 0.0), (elev_x + ex_off, elev_y + ey_off, elev_h), 0.32, mat_idx=0)
-for ez in range(6, int(elev_h), 6):
-    bm_add_box(bm_crew_tower, (elev_x, elev_y, float(ez)), (3.8, 3.4, 0.22), mat_idx=0)
-bm_add_box(bm_crew_tower, (elev_x, elev_y, elev_h * 0.5), (3.3, 2.9, elev_h - 2.0), mat_idx=3)
+elev_x = ct_cx + 1.6
+elev_y = -2.2
+elev_h = lobby_floor
+for ex_off in (-1.15, 1.15):
+    for ey_off in (-1.05, 1.05):
+        bm_add_strut(bm_crew_tower, (elev_x + ex_off, elev_y + ey_off, 0.4), (elev_x + ex_off, elev_y + ey_off, elev_h), 0.22, mat_idx=0)
+bm_add_box(bm_crew_tower, (elev_x, elev_y, elev_h * 0.5), (2.5, 2.3, elev_h - 1.2), mat_idx=3)
+bm_add_box(bm_crew_tower, (elev_x, elev_y, lobby_floor + 1.5), (2.4, 2.2, 2.8), mat_idx=2)
 
-for cab_z in (92.0, 188.0):
-    bm_add_box(bm_crew_tower, (elev_x, elev_y, cab_z), (3.6, 3.2, 5.2), mat_idx=2)
-    bm_add_box(bm_crew_tower, (elev_x, elev_y - 0.1, cab_z), (3.7, 2.6, 3.6), mat_idx=1)
-
-jw_z = 228.0
-jw_x0 = 9.25
-jw_x1 = ct_cx - ct_half
+jw_z = lobby_floor + 2.05
+jw_x0 = 9.40
+jw_x1 = lobby_x_ship
 jw_len = jw_x1 - jw_x0
 jw_cx = 0.5 * (jw_x0 + jw_x1)
-jw_y = -3.8
-bm_add_box(bm_crew_tower, (jw_cx, jw_y, jw_z - 1.65), (jw_len, 4.2, 0.45), mat_idx=2)
-bm_add_box(bm_crew_tower, (jw_cx, jw_y, jw_z + 1.65), (jw_len, 4.2, 0.45), mat_idx=2)
-bm_add_box(bm_crew_tower, (jw_cx, jw_y, jw_z), (jw_len - 0.4, 3.6, 2.6), mat_idx=1)
+jw_y = 0.0
+bm_add_box(bm_crew_tower, (jw_cx, jw_y, jw_z - 1.55), (jw_len, 3.6, 0.40), mat_idx=2)
+bm_add_box(bm_crew_tower, (jw_cx, jw_y, jw_z + 1.55), (jw_len, 3.6, 0.40), mat_idx=2)
+bm_add_box(bm_crew_tower, (jw_cx, jw_y, jw_z), (jw_len - 0.3, 3.1, 2.5), mat_idx=1)
 for jx in range(int(jw_x0) + 1, int(jw_x1), 3):
-    bm_add_strut(bm_crew_tower, (float(jx), jw_y - 2.0, jw_z - 1.5), (float(jx + 2.5), jw_y - 2.0, jw_z + 1.5), 0.20, mat_idx=0)
-    bm_add_strut(bm_crew_tower, (float(jx), jw_y + 2.0, jw_z - 1.5), (float(jx + 2.5), jw_y + 2.0, jw_z + 1.5), 0.20, mat_idx=0)
-    bm_add_strut(bm_crew_tower, (float(jx), jw_y - 2.0, jw_z - 1.5), (float(jx), jw_y - 2.0, jw_z + 1.5), 0.22, mat_idx=0)
-    bm_add_strut(bm_crew_tower, (float(jx), jw_y + 2.0, jw_z - 1.5), (float(jx), jw_y + 2.0, jw_z + 1.5), 0.22, mat_idx=0)
-bm_add_box(bm_crew_tower, (9.45, jw_y, jw_z), (0.8, 4.6, 3.8), mat_idx=0)
-bm_add_strut(bm_crew_tower, (jw_x1, jw_y - 1.8, jw_z - 9.5), (jw_x0 + 6.0, jw_y - 1.8, jw_z - 1.65), 0.55, mat_idx=0)
-bm_add_strut(bm_crew_tower, (jw_x1, jw_y + 1.8, jw_z - 9.5), (jw_x0 + 6.0, jw_y + 1.8, jw_z - 1.65), 0.55, mat_idx=0)
-# Enclosed indoor platform connecting passenger elevator and jetway
-plat_z = jw_z
-plat_cx = (elev_x + jw_cx) * 0.5
-plat_cy = (elev_y + jw_y) * 0.5
-plat_len = abs(jw_cx - elev_x) + 8.0
-plat_w = 9.0
-bm_add_box(bm_crew_tower, (plat_cx, plat_cy, plat_z - 0.4), (plat_len, plat_w, 0.8), mat_idx=0)
-bm_add_box(bm_crew_tower, (plat_cx, plat_cy, plat_z + 1.8), (plat_len - 0.6, plat_w - 0.6, 0.25), mat_idx=1)
-# side walls / enclosure
-for side_y in (-plat_w*0.45, plat_w*0.45):
-    bm_add_box(bm_crew_tower, (plat_cx, plat_cy + side_y, plat_z + 1.0), (plat_len - 1.0, 0.2, 2.2), mat_idx=2)
-bm_add_box(bm_crew_tower, (elev_x, elev_y, plat_z + 1.0), (4.2, 3.8, 2.4), mat_idx=2)
-# Cargo elevator (open heavy-duty steel box pulled by cables) inside the same tower
-cargo_elev_x = ct_cx + 4.5
-cargo_elev_y = ct_cy
-cargo_elev_h = 220.0
-# cables
-for cx_off in (-1.4, 1.4):
-    for cy_off in (-1.4, 1.4):
-        bm_add_strut(bm_crew_tower, (cargo_elev_x + cx_off, cargo_elev_y + cy_off, 0.0), (cargo_elev_x + cx_off, cargo_elev_y + cy_off, cargo_elev_h), 0.18, mat_idx=0)
-# open steel box (cargo deck)
-box_z = 160.0
-bm_add_box(bm_crew_tower, (cargo_elev_x, cargo_elev_y, box_z), (6.5, 5.5, 0.4), mat_idx=0)
-bm_add_box(bm_crew_tower, (cargo_elev_x - 3.1, cargo_elev_y, box_z + 1.2), (0.25, 5.5, 2.0), mat_idx=0)
-bm_add_box(bm_crew_tower, (cargo_elev_x + 3.1, cargo_elev_y, box_z + 1.2), (0.25, 5.5, 2.0), mat_idx=0)
-bm_add_box(bm_crew_tower, (cargo_elev_x, cargo_elev_y - 2.6, box_z + 1.2), (6.5, 0.25, 2.0), mat_idx=0)
-bm_add_box(bm_crew_tower, (cargo_elev_x, cargo_elev_y + 2.6, box_z + 1.2), (6.5, 0.25, 2.0), mat_idx=0)
-# guide rails
-bm_add_strut(bm_crew_tower, (cargo_elev_x - 3.4, cargo_elev_y - 2.8, 0.0), (cargo_elev_x - 3.4, cargo_elev_y - 2.8, cargo_elev_h), 0.35, mat_idx=0)
-bm_add_strut(bm_crew_tower, (cargo_elev_x + 3.4, cargo_elev_y + 2.8, 0.0), (cargo_elev_x + 3.4, cargo_elev_y + 2.8, cargo_elev_h), 0.35, mat_idx=0)
+    bm_add_strut(bm_crew_tower, (float(jx), jw_y - 1.7, jw_z - 1.4), (float(jx + 2.4), jw_y - 1.7, jw_z + 1.4), 0.18, mat_idx=0)
+    bm_add_strut(bm_crew_tower, (float(jx), jw_y + 1.7, jw_z - 1.4), (float(jx + 2.4), jw_y + 1.7, jw_z + 1.4), 0.18, mat_idx=0)
+bm_add_box(bm_crew_tower, (jw_x0 + 0.15, jw_y, jw_z), (0.7, 3.8, 3.4), mat_idx=0)
+bm_add_box(bm_crew_tower, (jw_x1 + 0.8, jw_y, jw_z), (2.2, 4.2, 3.6), mat_idx=2)
+bm_add_strut(bm_crew_tower, (jw_x1, jw_y - 1.5, jw_z - 8.0), (jw_x0 + 5.0, jw_y - 1.5, jw_z - 1.55), 0.48, mat_idx=0)
+bm_add_strut(bm_crew_tower, (jw_x1, jw_y + 1.5, jw_z - 8.0), (jw_x0 + 5.0, jw_y + 1.5, jw_z - 1.55), 0.48, mat_idx=0)
 
+# Cargo elevator: open steel box on cables, inside the tower, up to the cargo deck.
+cargo_elev_x = ct_cx - 3.2
+cargo_elev_y = 3.0
+cargo_elev_h = CARGO_DECK_Z + 4.0
+for cx_off in (-1.35, 1.35):
+    for cy_off in (-1.35, 1.35):
+        bm_add_strut(bm_crew_tower, (cargo_elev_x + cx_off, cargo_elev_y + cy_off, 0.4), (cargo_elev_x + cx_off, cargo_elev_y + cy_off, cargo_elev_h), 0.16, mat_idx=0)
+box_z = CARGO_DECK_Z
+bm_add_box(bm_crew_tower, (cargo_elev_x, cargo_elev_y, box_z), (5.6, 4.8, 0.35), mat_idx=0)
+bm_add_box(bm_crew_tower, (cargo_elev_x - 2.7, cargo_elev_y, box_z + 1.15), (0.22, 4.8, 1.9), mat_idx=0)
+bm_add_box(bm_crew_tower, (cargo_elev_x + 2.7, cargo_elev_y, box_z + 1.15), (0.22, 4.8, 1.9), mat_idx=0)
+bm_add_box(bm_crew_tower, (cargo_elev_x, cargo_elev_y - 2.3, box_z + 1.15), (5.6, 0.22, 1.9), mat_idx=0)
+bm_add_box(bm_crew_tower, (cargo_elev_x, cargo_elev_y + 2.3, box_z + 1.15), (5.6, 0.22, 1.9), mat_idx=0)
+bm_add_strut(bm_crew_tower, (cargo_elev_x - 2.9, cargo_elev_y - 2.5, 0.4), (cargo_elev_x - 2.9, cargo_elev_y - 2.5, cargo_elev_h), 0.32, mat_idx=0)
+bm_add_strut(bm_crew_tower, (cargo_elev_x + 2.9, cargo_elev_y + 2.5, 0.4), (cargo_elev_x + 2.9, cargo_elev_y + 2.5, cargo_elev_h), 0.32, mat_idx=0)
 
-cp_z = 216.0
-cp_x0 = 9.30
-cp_x1 = ct_cx - ct_half
+cp_z = CARGO_DECK_Z
+cp_x0 = 9.35
+cp_x1 = cargo_elev_x
 cp_len = cp_x1 - cp_x0
 cp_cx = 0.5 * (cp_x0 + cp_x1)
-cp_w = 11.5
+cp_w = 8.0
+cp_y = cargo_elev_y
 bm_add_box(bm_crew_tower, (cp_cx, 0.0, cp_z - 0.6), (cp_len, cp_w, 1.2), mat_idx=0)
 bm_add_box(bm_crew_tower, (cp_cx, 0.0, cp_z + 0.1), (cp_len - 0.5, cp_w - 0.8, 0.25), mat_idx=2)
 for rail_y in (-cp_w * 0.5 + 0.25, cp_w * 0.5 - 0.25):
@@ -1116,21 +1169,22 @@ cam_data.clip_start = 0.5
 cam_data.clip_end = 6000.0
 cam_obj = bpy.data.objects.new(name="IMAX_Camera", object_data=cam_data)
 bpy.context.collection.objects.link(cam_obj)
-cam_obj.location = (28.0, -345.0, 18.0)
+cam_obj.location = (95.0, -540.0, 78.0)
 
-target_point = Vector((-8.0, 0.0, 142.0))
+target_point = Vector((4.0, 0.0, 125.0))
 direction = target_point - cam_obj.location
 cam_obj.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
 scene.camera = cam_obj
 
-for window in bpy.context.window_manager.windows:
-    for area in window.screen.areas:
-        if area.type == 'VIEW_3D':
-            for space in area.spaces:
-                if space.type == 'VIEW_3D':
-                    space.clip_start = 0.5
-                    space.clip_end = 6000.0
-                    space.shading.type = 'MATERIAL'
-                    space.overlay.show_overlays = False
-                    if space.region_3d:
-                        space.region_3d.view_perspective = 'CAMERA'
+if not bpy.app.background:
+    for window in bpy.context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.type == 'VIEW_3D':
+                for space in area.spaces:
+                    if space.type == 'VIEW_3D':
+                        space.clip_start = 0.5
+                        space.clip_end = 6000.0
+                        space.shading.type = 'MATERIAL'
+                        space.overlay.show_overlays = False
+                        if space.region_3d:
+                            space.region_3d.view_perspective = 'CAMERA'

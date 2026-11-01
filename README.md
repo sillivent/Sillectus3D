@@ -1,27 +1,28 @@
 # Sillectus3D
 
-Procedural Blender 5.2 LTS Python scripts for a detailed futuristic V5 Starship / Super Heavy launch complex.
+One Blender 5.2 LTS script that builds a V5 Starship + Super Heavy launch complex.
 
-## Latest Fixes
+`v5_starship_full.py` is the only current script. Run that file. Do not paste shell commands into Blender's Python console.
 
-- Upper stage rotated 180° so the heat-shield belly faces the opposite direction.
-- Cockpit windows corrected and kept on the leeward side.
-- Small inverted tip cone on the nose removed.
-- Cargo bay door widened.
-- Protruding hinge cylinders removed from the forward (nose) stabilizer fins.
-- Passenger elevator and jetway connected by an enclosed indoor platform.
-- Spaceport terminal significantly enlarged.
-- Cargo elevator (open heavy-duty steel box pulled by cables) added inside the passenger/cargo tower.
-- Orbital Launch Mount and booster base lowered to ground level (same plane as the Tesla Semis and ground crew).
+## How to run
 
-## Usage
+1. Download `v5_starship_full.py` (or clone this repo).
+2. Blender → **Scripting** workspace → **Text → Open** → select the file.
+3. **Run Script** (Alt+P).
 
-1. Open Blender 5.2 LTS.
-2. Switch to the Scripting tab.
-3. Open or paste `v5_starship_full.py`.
-4. Run the script.
+The script clears the scene and rebuilds it. z = 0 is the concrete the trucks stand on.
 
-The scene purges itself and rebuilds the full complex.
+## What the scene is
+
+| Side | What is there |
+|---|---|
+| +X | Passenger tower, glass lobby, jetway, cockpit, four rows of horizontal oval cabin windows, 5 m cargo door |
+| ±Y | Four stabilizer flaps. Forward flaps have no hinge cans. |
+| −X | Ceramic heat-shield belly. Mechazilla stands on this side. Fuel umbilicals meet the hull at 100°, off the tiles. |
+
+The booster skirt is clamped by the orbital launch mount at pad level. The bells hang into the flame trench. The ship sits on the booster; one sleeve crosses the joint. There is no gap and no floating interstage ring.
+
+Passenger elevator is inside the crew tower and opens into the glass lobby. The jetway leaves that lobby and docks on the ship between cabin rows, so it does not cover a window. The cargo elevator is an open steel box on cables, with a deck out to the cargo door.
 
 ## License
 
