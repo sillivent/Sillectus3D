@@ -2,27 +2,24 @@
 
 Procedural Blender 5.2 LTS Python scripts for a detailed futuristic V5 Starship / Super Heavy launch complex.
 
-## Contents
+## Latest Fixes
 
-- `v5_starship_full.py` — Complete single-file scene generator (patched).
-- `objects/` — Modular per-object scripts that share the same helpers and materials.
-
-## Key Fixes in This Version
-
-- Heat shield now covers the true belly (negative-Y windward side) instead of the side.
-- Cockpit windows raised and moved to the leeward side.
-- Four rows of more oval, horizontally-oriented cabin windows on the leeward face.
-- Cargo bay door (≈5 m tall) placed on the leeward side below the cabin windows.
-- Stabilizer fins retained on the lateral (±X) positions appropriate for a belly-flop vehicle.
-- Launch pad / trench relationship tightened.
-- Separate Mechazilla + passenger/cargo tower with jetway, elevator, and terminal.
+- Upper stage rotated 180° so the heat-shield belly faces the opposite direction.
+- Cockpit windows corrected and kept on the leeward side.
+- Small inverted tip cone on the nose removed.
+- Cargo bay door widened.
+- Protruding hinge cylinders removed from the forward (nose) stabilizer fins.
+- Passenger elevator and jetway connected by an enclosed indoor platform.
+- Spaceport terminal significantly enlarged.
+- Cargo elevator (open heavy-duty steel box pulled by cables) added inside the passenger/cargo tower.
+- Orbital Launch Mount and booster base lowered to ground level (same plane as the Tesla Semis and ground crew).
 
 ## Usage
 
 1. Open Blender 5.2 LTS.
 2. Switch to the Scripting tab.
 3. Open or paste `v5_starship_full.py`.
-4. Run the script (Alt+P or the Run Script button).
+4. Run the script.
 
 The scene purges itself and rebuilds the full complex.
 
