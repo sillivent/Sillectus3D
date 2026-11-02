@@ -1,28 +1,39 @@
 # Sillectus3D
 
-One Blender 5.2 LTS script that builds a V5 Starship + Super Heavy launch complex.
+One Blender 5.2 LTS script that builds a V5 Starship and Super Heavy launch complex.
 
-`v5_starship_full.py` is the only current script. Run that file. Do not paste shell commands into Blender's Python console.
+`v5_starship_full.py` is the file to run. The numbered scripts are the same code, one object at a time, cut from that file so they cannot drift. Each numbered file clears the scene and builds only its object.
 
 ## How to run
 
-1. Download `v5_starship_full.py` (or clone this repo).
+1. Download `v5_starship_full.py`, or clone this repo.
 2. Blender → **Scripting** workspace → **Text → Open** → select the file.
-3. **Run Script** (Alt+P).
+3. **Run Script**.
+
+Do not paste the script into the Python console. Do not paste shell commands into the Python console. Those are not Blender commands and they raise `NameError` or `SyntaxError`.
 
 The script clears the scene and rebuilds it. z = 0 is the concrete the trucks stand on.
+
+## Datum
+
+| | |
+|---|---|
+| Hull diameter | 30 m, so a Tesla Semi with trailer fits in the cargo bay |
+| Booster | 60% of the vehicle stack (192 m), skirt at z = 3.2 |
+| Ship | 40% of the vehicle stack (128 m), sitting flush on the booster |
+| Pad | OLM ring stays at pad height. Its columns reach the trench floor |
 
 ## What the scene is
 
 | Side | What is there |
 |---|---|
-| +X | Passenger tower, glass lobby, jetway, cockpit, four rows of horizontal oval cabin windows, 5 m cargo door |
-| ±Y | Four stabilizer flaps. Forward flaps have no hinge cans. |
-| −X | Ceramic heat-shield belly. Mechazilla stands on this side. Fuel umbilicals meet the hull at 100°, off the tiles. |
+| +X | Passenger tower and its own podium, glass lobby, jetway, horseshoe cockpit, seven cabin decks, engineering ports, cargo door, cargo cage and platform. The terminal sits beside the tower and connects with a concourse. |
+| ±Y | Stabilizer fins, 25% larger and scaled with the hull. Forward fins have no hinge cans. |
+| −X | Heat-shield tiles from fin hinge to fin hinge. Mechazilla stands on this side. Above the cockpit the tiles wrap the round nose. Fuel umbilicals dogleg around the tiles and meet the hull on the steel. |
 
-The booster skirt is clamped by the orbital launch mount at pad level. The bells hang into the flame trench. The ship sits on the booster; one sleeve crosses the joint. There is no gap and no floating interstage ring.
+The booster skirt is clamped by the orbital launch mount. The bells hang into the flame trench. One sleeve crosses the joint. There is no gap and no floating interstage.
 
-Passenger elevator is inside the crew tower and opens into the glass lobby. The jetway leaves that lobby and docks on the ship between cabin rows, so it does not cover a window. The cargo elevator is an open steel box on cables, with a deck out to the cargo door.
+The upper half of the ship is the flight deck plus nine decks: seven passenger decks, then engineering and life support, then the cargo bay. The lower half is tankage.
 
 ## License
 
