@@ -27,9 +27,9 @@ The script clears the scene and rebuilds it. z = 0 is the concrete the trucks st
 
 | Side | What is there |
 |---|---|
-| +X | Passenger tower and its own podium, glass lobby, jetway, horseshoe cockpit, seven cabin decks, engineering ports, cargo door, cargo cage and platform. The terminal sits beside the tower and connects with a concourse. |
+| +X | Passenger tower and its own podium, glass lobby, jetway on a truss tied to the tower columns, horseshoe cockpit, seven cabin decks, engineering ports, wide cargo door. The cargo elevator rails run inside the tower and a bridge meets the door. The terminal sits beside the tower and connects with a concourse. |
 | ±Y | Stabilizer fins, 25% larger and scaled with the hull. Forward fins have no hinge cans. |
-| −X | Heat-shield tiles from fin hinge to fin hinge. Mechazilla stands on this side. Above the cockpit the tiles wrap the round nose. Fuel umbilicals dogleg around the tiles and meet the hull on the steel. |
+| −X | Heat-shield tiles from fin hinge to fin hinge. Mechazilla stands on this side. Above the cockpit the tiles wrap a smooth von Karman nose. Fuel umbilicals dogleg around the tiles and meet the hull on the steel. |
 
 The booster skirt is clamped by the orbital launch mount. The bells hang into the flame trench. One sleeve crosses the joint. There is no gap and no floating interstage.
 

@@ -1,9 +1,3 @@
-# Slice of v5_starship_full.py — generated, do not edit by hand.
-# Blender 5.2: Scripting workspace → Text → Open → Run Script.
-# Do not paste this into the Python console, and do not paste shell commands there.
-# Running this file clears the scene and builds only this piece.
-# For the whole starbase, open v5_starship_full.py and Run Script.
-
 import bpy
 import bmesh
 import math
@@ -106,7 +100,7 @@ mat_heat_grout = create_principled_material("V5_Tile_Grout_Seams", (0.003, 0.003
 mat_tower_steel = create_principled_material("Mechazilla_Steel", (0.09, 0.10, 0.11), metallic=0.85, roughness=0.52, noise_scale=12.0, bump_strength=0.06)
 mat_engine_metal = create_principled_material("Raptor_Nozzle_Alloy", (0.04, 0.045, 0.05), metallic=0.92, roughness=0.35)
 mat_copper_turbopump = create_principled_material("Raptor_Copper_Lines", (0.45, 0.25, 0.15), metallic=0.90, roughness=0.32)
-mat_cockpit_glass = create_principled_material("Shuttle_Cockpit_Glass", (0.08, 0.55, 0.95), metallic=0.1, roughness=0.08, emission_color=(0.12, 0.65, 1.0), emission_strength=2.8)
+mat_cockpit_glass = create_principled_material("Shuttle_Cockpit_Glass", (0.04, 0.22, 0.42), metallic=0.25, roughness=0.05, emission_color=(0.20, 0.62, 1.0), emission_strength=0.85)
 mat_cabin_glass = create_principled_material("Cabin_Deck_Glass", (0.20, 0.72, 1.0), metallic=0.1, roughness=0.1, emission_color=(0.25, 0.78, 1.0), emission_strength=4.0)
 mat_concrete = create_principled_material("Spaceport_Concrete", (0.26, 0.27, 0.28), metallic=0.0, roughness=0.92, noise_scale=6.0, bump_strength=0.18)
 mat_trench_char = create_principled_material("Trench_Scorched_Concrete", (0.05, 0.05, 0.055), metallic=0.05, roughness=0.96, noise_scale=10.0, bump_strength=0.25)
@@ -119,6 +113,8 @@ mat_hivis_orange = create_principled_material("Ground_Crew_HiVis", (1.0, 0.32, 0
 mat_headlight = create_principled_material("LED_Headlight", (0.9, 0.95, 1.0), metallic=0.0, roughness=0.1, emission_color=(0.9, 0.95, 1.0), emission_strength=14.0)
 mat_terminal_metal = create_principled_material("Terminal_Architectural_Alloy", (0.72, 0.75, 0.79), metallic=0.65, roughness=0.28)
 mat_terminal_glass = create_principled_material("Terminal_Curtain_Glass", (0.10, 0.38, 0.65), metallic=0.2, roughness=0.06, emission_color=(0.18, 0.55, 0.88), emission_strength=3.2)
+mat_road_yellow = create_principled_material("Apron_Yellow_Paint", (0.92, 0.68, 0.05), metallic=0.0, roughness=0.55)
+mat_road_white = create_principled_material("Apron_White_Paint", (0.84, 0.85, 0.86), metallic=0.0, roughness=0.48)
 
 def finalize_mesh_object(name, bm, mat=None, smooth=False, location=(0.0, 0.0, 0.0), rotation=(0.0, 0.0, 0.0)):
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
@@ -230,9 +226,11 @@ SHIP_NOSE_Z = SHIP_BASE_Z + SHIP_CYL_H
 SHIP_TOP_Z = SHIP_NOSE_Z + SHIP_NOSE_H
 SHIP_MID_Z = SHIP_BASE_Z + SHIP_STACK_H * 0.5
 CARGO_Z_BOT = SHIP_MID_Z
-CARGO_Z_TOP = CARGO_Z_BOT + 6.6
+CARGO_DOOR_H = 8.25
+CARGO_Z_TOP = CARGO_Z_BOT + CARGO_DOOR_H
 CARGO_DECK_Z = 0.5 * (CARGO_Z_BOT + CARGO_Z_TOP)
-ENG_DECK_Z = CARGO_Z_TOP + 4.8
+# Engineering stays on the original deck line, clear of the taller door.
+ENG_DECK_Z = SHIP_MID_Z + 6.6 + 4.8
 CABIN_DECK_Z = tuple(ENG_DECK_Z + 6.2 + i * 5.6 for i in range(7))
 # Highest passenger deck that is still on the cylinder. Decks above this ride the ogive.
 JETWAY_Z = CABIN_DECK_Z[1]
@@ -253,53 +251,33 @@ def orm(old_r):
 # Pad lip. The OLM ring can bear on it. The 30 m hull stays clear of the walls.
 TRENCH_EDGE = 27.0
 SHIP_SEGS = 128
-NOSE_CAP_R = 0.20 * HULL_R
 
 def v5_radius_at_z(z_world):
-    """Cylinder, tangent/von Karman ogive, then a hemisphere. The tip is round, not a flat disk."""
+    """Von Karman ogive. Radius falls the whole way, and the tip steepens instead of wearing a bulb."""
     if z_world <= SHIP_NOSE_Z:
         return HULL_R
     z_local = z_world - SHIP_NOSE_Z
     if z_local >= SHIP_NOSE_H - 1e-4:
         return 0.0
     t = max(0.0, min(1.0, z_local / SHIP_NOSE_H))
-    cos_arg = max(-1.0, min(1.0, 1.0 - 2.0 * (1.0 - t)))
-    theta = math.acos(cos_arg)
+    theta = math.acos(max(-1.0, min(1.0, 2.0 * t - 1.0)))
     r_vk = (HULL_R / math.sqrt(math.pi)) * math.sqrt(max(0.0, theta - 0.5 * math.sin(2.0 * theta)))
-    rho = (HULL_R ** 2 + SHIP_NOSE_H ** 2) / (2.0 * HULL_R)
-    r_tan = math.sqrt(max(0.0, rho ** 2 - z_local ** 2)) + HULL_R - rho
-    r_ogive = max(0.0, 0.55 * r_vk + 0.45 * r_tan)
-    cap_r = NOSE_CAP_R
-    dz_from_tip = SHIP_NOSE_H - z_local
-    if dz_from_tip >= cap_r:
-        return r_ogive
-    r_sphere = math.sqrt(max(0.0, cap_r * cap_r - (cap_r - dz_from_tip) ** 2))
-    band = min(1.8, cap_r * 0.6)
-    if dz_from_tip > cap_r - band:
-        u = (cap_r - dz_from_tip) / band
-        u = max(0.0, min(1.0, u))
-        u = u * u * (3.0 - 2.0 * u)
-        return r_ogive * (1.0 - u) + r_sphere * u
-    return r_sphere
+    return max(0.0, r_vk)
 
 def ship_z_samples():
-    """Cylinder rings, ogive rings, then extra rings around the round tip."""
+    """Cylinder rings, then ogive rings packed toward the round tip."""
     samples = []
     cyl_rings = 48
     for i in range(cyl_rings):
         samples.append(SHIP_BASE_Z + (i / cyl_rings) * SHIP_CYL_H)
-    ogive_h = SHIP_NOSE_H - NOSE_CAP_R
-    nose_rings = 36
+    nose_rings = 40
     for i in range(nose_rings):
-        samples.append(SHIP_NOSE_Z + (i / nose_rings) * ogive_h)
-    cap_rings = 12
-    for i in range(1, cap_rings + 1):
-        dz = max(0.05, NOSE_CAP_R * (1.0 - i / cap_rings))
-        samples.append(SHIP_TOP_Z - dz)
+        u = i / nose_rings
+        u_b = 1.0 - (1.0 - u) ** 1.35
+        samples.append(SHIP_NOSE_Z + u_b * (SHIP_NOSE_H - 0.04))
     return samples
 
 # @@PREAMBLE_END@@
-
 # @@OBJECT: 09_stabilizer_fins.py
 bm_flaps = bmesh.new()
 
